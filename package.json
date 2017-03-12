@@ -1,0 +1,40 @@
+{
+  "name": "react-native-viewpager",
+  "version": "0.1.0",
+  "description": "react-native-viewpager",
+  "main": "react-native-viewpager.js",
+  "files": [
+    "react-native-viewpager.js"
+  ],
+  "scripts": {
+ 		"start": "node node_modules/react-native/local-cli/cli.js start",
+		"test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liuhong1happy/react-native-viewpager.git"
+  },
+  "keywords": [
+    "react-native",
+    "react-native-viewpager",
+    "viewpager"
+  ],
+	"private": true,
+	"dependencies": {
+		"react": "15.4.2",
+		"react-native": "0.42.0",
+		"babel-jest": "19.0.0",
+		"babel-preset-react-native": "1.9.1",
+		"jest": "19.0.2",
+		"react-test-renderer": "15.4.2"
+	},
+	"jest": {
+		"preset": "react-native"
+	},
+  "author": "Holly Liu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/liuhong1happy/react-native-viewpager/issues"
+  },
+  "homepage": "https://github.com/liuhong1happy/react-native-viewpager#readme"
+}
