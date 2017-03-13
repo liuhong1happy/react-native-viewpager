@@ -1,16 +1,20 @@
 import React from 'react';
-import { PanResponder, View, Text } from 'react-native';
+import { PanResponder, View, Text, NativeModules, LayoutAnimation } from 'react-native';
 
 import ChildView from './ChildView';
 
 import {SCROLL_DIRECTION,SCROLL_STATE,PAGE_STATUS } from './Constants';
 import DomHelper from './DomHelper';
 
+const EXACT_PERCENT = 30;
+
+const { UIManager } = NativeModules;
+
 class ViewPager extends React.Component {
     constructor(props) {
         super(props);
         this.loop = true;
-        this.direction  = SCROLL_DIRECTION.horizontal;
+        this.direction  = SCROLL_DIRECTION.vertical;
         this.state = {
             width:  0,
             height: 0,
@@ -26,18 +30,20 @@ class ViewPager extends React.Component {
     }
     componentWillMount() {
         this._panResponder = PanResponder.create({
-        // 要求成为响应者：
-        onStartShouldSetPanResponder: (evt, gestureState) => true,
-        onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-        onMoveShouldSetPanResponder: (evt, gestureState) => true,
-        onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
-        onPanResponderGrant: (evt, gestureState) => this._onStart(evt, gestureState),
-        onPanResponderMove: (evt, gestureState) => this._onMove(evt, gestureState),
-        onPanResponderTerminationRequest: (evt, gestureState) => true,
-        onPanResponderRelease: (evt, gestureState) => this._onStop(evt, gestureState),
-        onPanResponderTerminate: (evt, gestureState) => this._onStop(evt, gestureState),
-        onShouldBlockNativeResponder: (evt, gestureState) => true
+            // 要求成为响应者：
+            onStartShouldSetPanResponder: (evt, gestureState) => true,
+            onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
+            onMoveShouldSetPanResponder: (evt, gestureState) => true,
+            onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+            onPanResponderGrant: (evt, gestureState) => this._onStart(evt, gestureState),
+            onPanResponderMove: (evt, gestureState) => this._onMove(evt, gestureState),
+            onPanResponderTerminationRequest: (evt, gestureState) => true,
+            onPanResponderRelease: (evt, gestureState) => this._onStop(evt, gestureState),
+            onPanResponderTerminate: (evt, gestureState) => this._onStop(evt, gestureState),
+            onShouldBlockNativeResponder: (evt, gestureState) => true
         });
+    
+        UIManager.setLayoutAnimationEnabledExperimental && UIManager.setLayoutAnimationEnabledExperimental(true);
     }
     genChildrenViews(children = []) {
         const EmptyView = <View><Text>No Content!</Text></View>;
@@ -117,12 +123,16 @@ class ViewPager extends React.Component {
             transforms.current = {left: 0, top: 0, maskOpacity: 0, maskWidth: 0, maskHeight: 0};
             transforms.prev = {left: isVertical ? 0 : -width, top: isVertical ? -height: 0, maskOpacity: 0, maskWidth: width, maskHeight: height};
             transforms.next = {left: isVertical ? 0 : width, top: isVertical ? height: 0, maskOpacity: 0, maskWidth: width, maskHeight: height};
+            this.setState({width, height, layout: true, transforms});
         }
-        this.setState({width, height, layout: true, transforms});
     }
     _onStart(evt, gestureState) {
         if(this.state.scrollState!== SCROLL_STATE.idle) return;
         const scrollState = SCROLL_STATE.dragging;
+        const {transforms} = this.state;
+        this.refs.prev && this.refs.prev.setTransform(transforms.prev);
+        this.refs.next && this.refs.next.setTransform(transforms.next);
+        this.refs.current && this.refs.current.setTransform(transforms.current);
         this.setState({
             scrollState
         })
@@ -139,7 +149,7 @@ class ViewPager extends React.Component {
             transforms.next.left = width + dx;
             transforms.prev.left = -width + dx;
         } else {
-            transforms.current.maskOpacity = Math.abs(dy / width);
+            transforms.current.maskOpacity = Math.abs(dy / height);
             transforms.current.maskWidth = width;
             transforms.current.maskHeight = height;
             transforms.next.top = height + dy;
@@ -163,36 +173,34 @@ class ViewPager extends React.Component {
         const percent = isVertical ? Math.abs(dy)*100 / height : Math.abs(dx)*100 / width;
 
         if(!isVertical) {
-            isPrev = dx>0 && percent > 50;
-            isNext = dx<0 && percent > 50;
-            transforms.current.maskOpacity = Math.abs(dx *2 / width);
-            transforms.next.left = isNext ? 0 : width + dx;
-            transforms.prev.left = isPrev ? 0 : -width + dx;
+            isPrev = dx>0 && percent > EXACT_PERCENT;
+            isNext = dx<0 && percent > EXACT_PERCENT;
+            transforms.current.maskOpacity = (isPrev || isNext) ? Math.abs(dx / width) : 0;
+            transforms.next.left = isNext ? 0 : width;
+            transforms.prev.left = isPrev ? 0 : -width;
         } else {
-            isPrev = dy>0 && percent > 50;
-            isNext = dy<0 && percent > 50;
-            transforms.current.maskOpacity = Math.abs(dy *2 / width);
-            transforms.next.top = isNext ? 0 : height + dy;
-            transforms.prev.top = isPrev ? 0 : -height + dy;
+            isPrev = dy>0 && percent > EXACT_PERCENT;
+            isNext = dy<0 && percent > EXACT_PERCENT;
+            transforms.current.maskOpacity = (isPrev || isNext) ? Math.abs(dy / height) : 0;
+            transforms.next.top = isNext ? 0 : height;
+            transforms.prev.top = isPrev ? 0 : -height;
         }
-
+        LayoutAnimation.easeInEaseOut();
         this.setState({
             scrollState,
             transforms
         })
 
-        console.log('onStop', transforms);
-
         setTimeout(()=>{
             const scrollState = SCROLL_STATE.idle;
             let pageIndex = this.state.pageIndex;
             if(isVertical) {
-                if(dy > 0 && percent >= 50) pageIndex = this.prevIndex;
-                else if(dy <0 && percent >= 50) pageIndex = this.nextIndex;
+                if(dy > 0 && percent >= EXACT_PERCENT) pageIndex = this.prevIndex;
+                else if(dy <0 && percent >= EXACT_PERCENT) pageIndex = this.nextIndex;
                 else pageIndex = this.state.pageIndex;
             } else {
-                if(dx > 0 && percent >= 50) pageIndex = this.prevIndex;
-                else if(dx <0 && percent >= 50) pageIndex = this.nextIndex;
+                if(dx > 0 && percent >= EXACT_PERCENT) pageIndex = this.prevIndex;
+                else if(dx <0 && percent >= EXACT_PERCENT) pageIndex = this.nextIndex;
                 else pageIndex = this.state.pageIndex;
             }
 

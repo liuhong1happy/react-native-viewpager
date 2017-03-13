@@ -8,6 +8,7 @@
   ],
   "scripts": {
  		"start": "node node_modules/react-native/local-cli/cli.js start",
+    "release": "cd android && ./gradlew assembleRelease && ./gradlew installRelease",
 		"test": "jest"
   },
   "repository": {
