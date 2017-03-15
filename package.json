@@ -4,7 +4,8 @@
   "description": "react-native-viewpager",
   "main": "react-native-viewpager.js",
   "files": [
-    "react-native-viewpager.js"
+    "react-native-viewpager.js",
+    "src"
   ],
   "scripts": {
  		"start": "node node_modules/react-native/local-cli/cli.js start",
