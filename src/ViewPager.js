@@ -50,6 +50,7 @@ class ViewPager extends React.Component {
         const length = children.length;
         const pageIndex = this.state.pageIndex;
         const { width, height, transforms, scrollState } = this.state;
+        const newChildren = [];
         if(length===0) {
             return EmptyView;
         } 
@@ -64,6 +65,47 @@ class ViewPager extends React.Component {
                 index: 0,
                 ...transforms.current
             }, children[0]));
+            return newChildren;
+        } else if(length ===2) {
+            this.prevIndex = null;
+            this.nextIndex = null;
+            children[0].pageStatus = 'only';
+            newChildren.push(React.createElement(ChildView,{
+                ref: 'current',
+                pageStatus: 'current',
+                width, height,
+                direction: this.direction,
+                index: pageIndex,
+                key: 'child'+pageIndex,
+                ...transforms.current,
+                scrollState
+            }, children[pageIndex]));
+            if(pageIndex===0) {
+                const nextIndex = this.nextIndex = pageIndex + 1;
+                newChildren.push(React.createElement(ChildView,{
+                    ref: 'next',
+                    pageStatus: 'next',
+                    width, height,
+                    direction: this.direction,
+                    index: nextIndex,
+                    key: 'child'+nextIndex,
+                    ...transforms.next,
+                    scrollState
+                }, children[pageIndex+1]));
+            }else {
+                const prevIndex = this.prevIndex = pageIndex - 1;
+                newChildren.push(React.createElement(ChildView,{
+                    ref: 'prev',
+                    pageStatus: 'prev',
+                    width, height,
+                    direction: this.direction,
+                    index: prevIndex,
+                    key: 'child'+prevIndex,
+                    ...transforms.prev,
+                    scrollState
+                }, children[prevIndex]));
+            }
+            return newChildren;
         } 
         else {
             const loop = this.loop || !!this.props.loop;
@@ -77,7 +119,7 @@ class ViewPager extends React.Component {
                 this.prevIndex = prevIndex = prevIndex <= -1 ? null : prevIndex;
                 this.nextIndex = nextIndex = nextIndex >= length ? null : nextIndex;
             }
-            const newChildren = [];
+            
             newChildren.push(React.createElement(ChildView,{
                 ref: 'current',
                 pageStatus: 'current',
@@ -88,6 +130,7 @@ class ViewPager extends React.Component {
                 ...transforms.current,
                 scrollState
             }, children[pageIndex]));
+
             if(this.prevIndex!==null) {
                 newChildren.push(React.createElement(ChildView,{
                     ref: 'prev',
@@ -100,6 +143,7 @@ class ViewPager extends React.Component {
                     scrollState
                 }, children[prevIndex]));
             }
+
             if(this.nextIndex!==null) {
                 newChildren.push(React.createElement(ChildView,{
                     ref: 'next',
