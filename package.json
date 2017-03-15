@@ -21,7 +21,7 @@
     "viewpager"
   ],
 	"private": true,
-	"dependencies": {
+	"devDependencies": {
 		"react": "15.4.2",
 		"react-native": "0.42.0",
 		"babel-jest": "19.0.0",

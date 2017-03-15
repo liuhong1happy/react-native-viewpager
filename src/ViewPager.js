@@ -6,7 +6,7 @@ import ChildView from './ChildView';
 import {SCROLL_DIRECTION,SCROLL_STATE,PAGE_STATUS } from './Constants';
 import DomHelper from './DomHelper';
 
-const EXACT_PERCENT = 30;
+const EXACT_PERCENT = 8;
 
 const { UIManager } = NativeModules;
 
@@ -137,8 +137,7 @@ class ViewPager extends React.Component {
             scrollState
         })
     }
-    _onMove(evt, gestureState) {
-        if(this.state.scrollState!== SCROLL_STATE.dragging) return;
+    _updatePosition(evt, gestureState) {
         const { dx, dy } = gestureState;
         const { width, height, transforms } = this.state;
 
@@ -159,11 +158,15 @@ class ViewPager extends React.Component {
         this.refs.prev && this.refs.prev.setTransform(transforms.prev);
         this.refs.next && this.refs.next.setTransform(transforms.next);
         this.refs.current && this.refs.current.setTransform(transforms.current);
-
-        console.log('onMove', transforms);
+    }
+    _onMove(evt, gestureState) {
+        if(this.state.scrollState!== SCROLL_STATE.dragging) return;
+        this._updatePosition(evt, gestureState);
     }
     _onStop(evt, gestureState) {
         if(this.state.scrollState!== SCROLL_STATE.dragging) return;
+        this._updatePosition(evt, gestureState);
+
         const scrollState = SCROLL_STATE.settling;
         this.settlingTime = this.props.settlingTime || 450;
         const { dx, dy } = gestureState;
@@ -176,16 +179,16 @@ class ViewPager extends React.Component {
             isPrev = dx>0 && percent > EXACT_PERCENT;
             isNext = dx<0 && percent > EXACT_PERCENT;
             transforms.current.maskOpacity = (isPrev || isNext) ? Math.abs(dx / width) : 0;
-            transforms.next.left = isNext ? 0 : width;
-            transforms.prev.left = isPrev ? 0 : -width;
+            transforms.next.left = isNext ? 0 : width+dx;
+            transforms.prev.left = isPrev ? 0 : -width+dx;
         } else {
             isPrev = dy>0 && percent > EXACT_PERCENT;
             isNext = dy<0 && percent > EXACT_PERCENT;
             transforms.current.maskOpacity = (isPrev || isNext) ? Math.abs(dy / height) : 0;
-            transforms.next.top = isNext ? 0 : height;
-            transforms.prev.top = isPrev ? 0 : -height;
+            transforms.next.top = isNext ? 0 : height+dy;
+            transforms.prev.top = isPrev ? 0 : -height+dy;
         }
-        LayoutAnimation.easeInEaseOut();
+        LayoutAnimation.spring();
         this.setState({
             scrollState,
             transforms
